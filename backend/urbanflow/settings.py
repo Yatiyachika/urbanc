@@ -102,7 +102,16 @@ REST_FRAMEWORK = {
 }
 
 # CORS — browsers (Expo web) and tooling; native RN does not use CORS.
-CORS_ALLOW_ALL_ORIGINS = True
+# Restrict CORS. Native apps generally don't rely on CORS, but this prevents
+# any random website from calling your API in-browser.
+CORS_ALLOW_ALL_ORIGINS = False
+
+# Allow only your local dev origins (adjust if you use Expo web).
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:19006",
+    "http://127.0.0.1:19006",
+    "http://10.151.33.194:19006",
+]
 CORS_ALLOW_HEADERS = (
     "accept",
     "accept-encoding",
@@ -138,3 +147,13 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+# Report submission access control:
+# Only allow submissions from these CIDRs (IP whitelist).
+# Default includes private networks and localhost (useful for Expo Go on Android).
+_default_cidrs = "127.0.0.1/32,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12"
+URBANFLOW_ALLOWED_CIDRS = [
+    cidr.strip()
+    for cidr in os.getenv("URBANFLOW_ALLOWED_CIDRS", _default_cidrs).split(",")
+    if cidr.strip()
+]

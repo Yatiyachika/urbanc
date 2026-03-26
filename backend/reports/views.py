@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import ViolationReportSerializer
+from .permissions import AllowedUrbanFlowIP
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class ReportCreateView(APIView):
     """
 
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [AllowedUrbanFlowIP]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):

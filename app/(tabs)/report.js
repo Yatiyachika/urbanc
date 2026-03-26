@@ -1,10 +1,11 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/constants/colors';
 import { spacing } from '@/src/constants/spacing';
+import { API_BASE_URL } from '@/src/constants/api';
 import { useIssues } from '@/src/state/issues';
 
 const categories = ['Cleanliness', 'Roads', 'Water', 'Lights', 'Public Safety', 'Other'];
@@ -59,6 +60,8 @@ export default function ReportIssueScreen() {
   const [coords, setCoords] = useState(null);
   const [photoUri, setPhotoUri] = useState(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submittingError, setSubmittingError] = useState(null);
   const cameraRef = useRef(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
@@ -97,19 +100,64 @@ export default function ReportIssueScreen() {
     setCameraOpen(false);
   }
 
-  function submitMock() {
-    if (!title.trim() || !description.trim() || !coords || !photoUri) return;
-    addIssue({
-      category,
-      title: title.trim(),
-      description: description.trim(),
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      imageUri: photoUri,
-    });
-    setTitle('');
-    setDescription('');
-    setPhotoUri(null);
+  async function submitToBackend() {
+    if (!coords || !photoUri) return;
+
+    setSubmitting(true);
+    setSubmittingError(null);
+    try {
+      // Your current UI doesn't do OCR yet, so keep plate empty (backend accepts empty strings).
+      const number_plate = '';
+
+      const uri = photoUri;
+      const filename = uri.split('/').pop() || 'photo.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const ext = match ? match[1].toLowerCase() : 'jpg';
+      const type = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+
+      const formData = new FormData();
+      formData.append('image', { uri, name: filename, type });
+      formData.append('number_plate', number_plate);
+      formData.append('latitude', String(coords.latitude));
+      formData.append('longitude', String(coords.longitude));
+
+      const res = await fetch(`${API_BASE_URL}/api/report/`, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: formData,
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(json?.message || 'Failed to submit report');
+      }
+
+      const reportId = json?.data?.id;
+      console.log('UrbanFlow: submitted report id=', reportId);
+      console.log('UrbanFlow: location=', coords.latitude, coords.longitude);
+      console.log('UrbanFlow: photo=', uri);
+
+      // Keep the existing local UI behavior (your in-app issue list).
+      addIssue({
+        category,
+        title: title.trim() || 'Untitled',
+        description: description.trim() || '',
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        imageUri: photoUri,
+      });
+
+      setTitle('');
+      setDescription('');
+      setPhotoUri(null);
+    } catch (e) {
+      const msg = e?.message || 'Unknown error';
+      setSubmittingError(msg);
+      Alert.alert('Upload failed', msg);
+      console.error('UrbanFlow upload error:', e);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (cameraOpen) {
@@ -316,7 +364,7 @@ export default function ReportIssueScreen() {
         </Card>
 
         <Pressable
-          onPress={submitMock}
+          onPress={submitToBackend}
           style={{
             backgroundColor: canSubmit ? colors.success : 'rgba(255,255,255,0.08)',
             padding: 16,
@@ -328,6 +376,16 @@ export default function ReportIssueScreen() {
           <Text style={{ textAlign: 'center', fontWeight: '900', color: colors.text }}>
             Submit report
           </Text>
+          {submitting ? (
+            <Text style={{ textAlign: 'center', marginTop: 6, color: colors.muted, fontWeight: '700' }}>
+              Submitting...
+            </Text>
+          ) : null}
+          {submittingError ? (
+            <Text style={{ textAlign: 'center', marginTop: 6, color: colors.primary, fontWeight: '700' }}>
+              {submittingError}
+            </Text>
+          ) : null}
           {!canSubmit ? (
             <Text style={{ textAlign: 'center', marginTop: 6, color: colors.muted, fontWeight: '700' }}>
               Missing: {missing.join(', ')}
