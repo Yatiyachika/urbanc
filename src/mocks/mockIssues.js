@@ -1,0 +1,36 @@
+export const mockIssues = [
+  {
+    id: '1',
+    category: 'Cleanliness',
+    title: 'Garbage pile near market',
+    description: 'Large garbage pile blocking footpath.',
+    status: 'Pending',
+    imageUri: 'https://picsum.photos/800/500',
+    latitude: 19.076,
+    longitude: 72.8777,
+    createdAt: Date.now() - 1000 * 60 * 60 * 2,
+  },
+  {
+    id: '2',
+    category: 'Roads',
+    title: 'Deep pothole',
+    description: 'Pothole causing traffic and accidents.',
+    status: 'Approved',
+    imageUri: 'https://picsum.photos/801/500',
+    latitude: 19.078,
+    longitude: 72.875,
+    createdAt: Date.now() - 1000 * 60 * 60 * 24,
+  },
+  {
+    id: '3',
+    category: 'Water',
+    title: 'Water leakage from pipe',
+    description: 'Continuous leakage wasting water.',
+    status: 'Resolved',
+    imageUri: 'https://picsum.photos/802/500',
+    latitude: 19.074,
+    longitude: 72.879,
+    createdAt: Date.now() - 1000 * 60 * 60 * 48,
+  },
+];
+
