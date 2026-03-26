@@ -11,7 +11,7 @@ SECRET_KEY = "change-me-in-production-use-env-var"
 DEBUG = True
 
 # Include your machine's LAN IP for a physical device, and 10.0.2.2 for Android emulator → host.
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "10.0.2.2"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "10.0.2.2", "10.151.33.194"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
