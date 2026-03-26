@@ -2,13 +2,23 @@
 Django settings for UrbanFlow (parking violation reporting API).
 """
 
+import os
+import secrets
 from pathlib import Path
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "change-me-in-production-use-env-var"
+# Load from environment variables.
+# In production: set `DJANGO_SECRET_KEY` and keep `DEBUG=False`.
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+DEBUG = os.getenv("DEBUG", "false").strip().lower() in ("1", "true", "yes", "on")
 
-DEBUG = True
+if not SECRET_KEY:
+    # Avoid insecure placeholder secrets. This is secure, but rotates on each restart.
+    # For production stability, set `DJANGO_SECRET_KEY`.
+    SECRET_KEY = secrets.token_urlsafe(64)
+    print("WARNING: DJANGO_SECRET_KEY not set; using a generated secret key (restart will rotate it).")
 
 # Include your machine's LAN IP for a physical device, and 10.0.2.2 for Android emulator → host.
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "10.0.2.2", "10.151.33.194"]
